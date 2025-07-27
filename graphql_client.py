@@ -14,6 +14,7 @@ import webbrowser
 from logging import WARNING, basicConfig, getLogger
 from pathlib import Path
 from queue import Queue
+from urllib.parse import urlencode
 
 import jwt as pyjwt
 import streamlit as st
@@ -248,7 +249,7 @@ class GraphqlClient:
     """Streamlit-adapted GraphQL client."""
 
     def __init__(self, database: str = "prod", base_url: str = "captor.se") -> None:
-        """Initialize the StreamlitGraphqlClient.
+        """Initialize the GraphqlClient.
 
         Attempts to load an existing token from Streamlit session state
         or from a local file (~/.streamlit_token). If found, stores it in
@@ -275,8 +276,22 @@ class GraphqlClient:
 
         self.token: str | None = token
 
+    def get_auth_url(self, redirect_uri: str) -> str:
+        """Construct the URL for redirecting the user to the OAuth login page.
+
+        Args:
+            redirect_uri: The URL to which the auth service will redirect
+            after successful login.
+
+        Returns:
+            The complete authentication URL.
+        """
+        prefix = "" if self.database == "prod" else "test"
+        params = urlencode({"redirect_uri": redirect_uri})
+        return f"https://{prefix}portal.{self.base_url}/token?{params}"
+
     def login(self) -> str:
-        """Captor Graphql API login workflow.
+        """Start the local HTTP callback flow.
 
         Returns:
             The raw token string.

@@ -22,7 +22,6 @@ gql = st.session_state.gql
 token = st.session_state.get("token")
 
 if not token:
-    st.markdown("<meta http-equiv='refresh' content='2'>", unsafe_allow_html=True)
     st.warning("🔐 You must log in to access Captor’s GraphQL API.")
 
     if st.button("🔑 Log in via browser"):

@@ -11,7 +11,8 @@ import os
 
 import pandas as pd
 import streamlit as st
-from graphql_client_streamlit import GraphqlClient
+
+from graphql_client import GraphqlClient
 
 ENV = os.environ.get("DEPLOYMENT_ENV", "local").lower()
 if ENV == "cloud":

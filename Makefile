@@ -11,12 +11,10 @@ install:
 	venv/bin/pip install poetry==2.1.3
 	@. venv/bin/activate && \
 	poetry install --no-root --with dev && \
-	poetry run pre-commit install && \
-	poetry export --output requirements.txt --without-hashes --all-groups
+	poetry run pre-commit install
 
 update:
 	poetry update --with dev
-	poetry export --output requirements.txt --without-hashes --all-groups
 
 lint:
 	poetry run ruff format

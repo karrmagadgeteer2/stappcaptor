@@ -20,7 +20,7 @@ if APP_NAME:
     REDIRECT_URI = f"https://{APP_NAME}.streamlit.app"
 else:
     ENV = "local"
-    REDIRECT_URI = "http://localhost:5678"
+    REDIRECT_URI = "http://localhost:8501"
 
 st.set_page_config(page_title="Captor GraphQL Explorer", layout="wide")
 st.title("🔍 Captor GraphQL Explorer")
@@ -47,8 +47,11 @@ if not token:
     else:
         auth_url = gql.get_auth_url(redirect_uri=REDIRECT_URI)
         st.markdown(
-            f'<a href="{auth_url}" target="_blank" rel="noopener">'
-            "🔑 Click here to log in (Cloud)" + "</a>",
+            f"""
+            <a href="{auth_url}" target="_blank" rel="noopener">
+              <button>🔑 Log in (opens in new tab)</button>
+            </a>
+            """,
             unsafe_allow_html=True,
         )
         if st.button("✅ I completed login, proceed"):

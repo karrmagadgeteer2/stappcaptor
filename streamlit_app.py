@@ -27,19 +27,26 @@ st.title("🔍 Captor GraphQL Explorer")
 
 if "gql" not in st.session_state:
     st.session_state.gql = GraphqlClient()
-gql = st.session_state.gql
+gql: GraphqlClient = st.session_state.gql
 
-token = st.session_state.get("token")
+if ENV == "cloud" and "token" not in st.session_state:
+    params = st.experimental_get_query_params()
+    tok = (params.get("api_key") or params.get("token") or [None])[0]
+    if tok:
+        st.session_state["token"] = tok
+        st.experimental_set_query_params()
+        st.success("✅ Token captured from URL!")
 
-if not token:
-    st.warning("🔐 Authentication required to access Captor’s GraphQL API.")
+if "token" not in st.session_state:
+    st.warning("🔐 You must log in to access Captor’s GraphQL API.")
 
     if ENV == "local":
         if st.button("🔑 Log in via browser (Local)"):
-            with st.spinner("Opening browser and waiting for callback…"):
+            with st.spinner("Opening browser; await the callback…"):
                 try:
                     gql.login()
-                    st.session_state["just_authenticated"] = True
+                    st.session_state["token"] = gql.token
+                    st.success("✅ Authenticated successfully!")
                 except Exception as e:  # noqa: BLE001
                     st.error(f"Login failed: {e}")
         st.stop()
@@ -47,23 +54,11 @@ if not token:
     else:
         auth_url = gql.get_auth_url(redirect_uri=REDIRECT_URI)
         st.markdown(
-            f"""
-            <a href="{auth_url}" target="_blank" rel="noopener">
-              <button>🔑 Log in (opens in new tab)</button>
-            </a>
-            """,
+            f'<a href="{auth_url}" target="_blank" rel="noopener">'
+            "🔑 Click here to log in (Cloud)</a>",
             unsafe_allow_html=True,
         )
-        if st.button("✅ I completed login, proceed"):
-            params = st.experimental_get_query_params()
-            token_list = params.get("api_key") or params.get("token")
-            if token_list:
-                token_value = token_list[0]
-                st.session_state["token"] = token_value
-                st.session_state["just_authenticated"] = True
-            else:
-                st.error("No token found in URL. Did you finish logging in?")
-            st.stop()
+        st.stop()
 
 if st.session_state.pop("just_authenticated", False):
     st.success("👍 Authentication successful!")

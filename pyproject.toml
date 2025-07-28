@@ -11,7 +11,6 @@ maintainers = [
 license = { file = "LICENSE.md" }
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
-package-mode = false
 
 classifiers = [
     "Programming Language :: Python :: 3.10",

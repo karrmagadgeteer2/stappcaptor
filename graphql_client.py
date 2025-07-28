@@ -168,7 +168,7 @@ def token_get_server(
     database: str,
     base_url: str,
     filename: str,
-    port: int = 5678,
+    port: int = 6789,
 ) -> str:
     """Start a temporary server to retrieve a token via browser.
 
@@ -176,7 +176,7 @@ def token_get_server(
         database (str): Database name.
         base_url (str): Base URL for the authentication service.
         filename (str): File to store the token.
-        port (int): Local server port. Defaults to 5678.
+        port (int): Local server port. Defaults to 6789.
 
     Returns:
         str: Retrieved token.
@@ -300,7 +300,6 @@ class GraphqlClient:
             database=self.database,
             base_url=self.base_url,
             filename=self.tokenfile,
-            port=5678,
         )
         st.session_state["token"] = token
         self.token = token

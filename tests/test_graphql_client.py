@@ -8,7 +8,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from graphql_client import GraphqlClient, GraphqlError
 
@@ -26,6 +26,16 @@ def test_query_raises_graphql_error_on_http_error():
     with patch("graphql_client.requests_post", return_value=mock_resp):
         with pytest.raises(GraphqlError):
             client.query("query { }")
+
+
+def test_query_raises_graphql_error_on_request_exception():
+    st.session_state["token"] = "tok"
+    client = GraphqlClient()
+    client.token = "tok"
+    with patch("graphql_client.requests_post", side_effect=RequestException("fail")):
+        with pytest.raises(GraphqlError) as exc_info:
+            client.query("query { }")
+        assert isinstance(exc_info.value.__cause__, RequestException)
 
 
 def test_query_success_returns_data():

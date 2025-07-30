@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 
 import jwt as pyjwt
 import streamlit as st
-from requests import HTTPError
+from requests import RequestException
 from requests import post as requests_post
 from werkzeug.serving import make_server
 from werkzeug.wrappers import Request, Response
@@ -334,7 +334,7 @@ class GraphqlClient:
             and the second element is any errors (str, list, or None).
 
         Raises:
-            GraphqlError: If no token is set or a network error occurs.
+            GraphqlError: If no token is set or the request fails.
         """
         if not self.token:
             msg = "Authentication token is missing. Please log in."
@@ -357,7 +357,7 @@ class GraphqlClient:
                 timeout=timeout,
             )
             resp.raise_for_status()
-        except HTTPError as exc:
+        except RequestException as exc:
             raise GraphqlError(str(exc)) from exc
 
         result = resp.json()

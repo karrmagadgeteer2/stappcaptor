@@ -16,7 +16,7 @@ ENV = "cloud"
 STREAMLIT_APP_NAME = "stappcaptor"
 
 if ENV == "cloud":
-    REDIRECT_URI = f"https://{os.environ.get('STREAMLIT_APP_NAME')}.streamlit.app"
+    REDIRECT_URI = f"https://{STREAMLIT_APP_NAME}.streamlit.app"
 else:
     REDIRECT_URI = "http://localhost:8501"
 

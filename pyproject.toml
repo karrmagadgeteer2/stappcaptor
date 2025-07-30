@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-repository = "https://github.com/CaptorAB/py-utils"
+repository = "https://github.com/karrmagadgeteer2/stappcaptor"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=3.7.1,<6.0.0"

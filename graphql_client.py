@@ -1,4 +1,4 @@
-"""Module defining the GraphqlClient class and its help functions.
+"""Module defining the GraphqlClient class and its helper functions.
 
 Copyright (c) Captor Fund Management AB.
 

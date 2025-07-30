@@ -164,7 +164,7 @@ def get_token_from_file(database: str, filename: str) -> str:
     return token
 
 
-def token_get_server(
+def token_get_server(  # pragma: no cover
     database: str,
     base_url: str,
     filename: str,
@@ -357,8 +357,8 @@ class GraphqlClient:
                 timeout=timeout,
             )
             resp.raise_for_status()
-        except HTTPError as he:
-            return None, str(he)
+        except HTTPError as exc:
+            raise GraphqlError(str(exc)) from exc
 
         result = resp.json()
         return result.get("data"), result.get("errors")

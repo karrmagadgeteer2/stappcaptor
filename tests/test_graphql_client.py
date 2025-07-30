@@ -1,6 +1,6 @@
-from unittest.mock import Mock, patch
 import sys
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 import streamlit as st
@@ -8,8 +8,9 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from graphql_client import GraphqlClient, GraphqlError
 from requests import HTTPError
+
+from graphql_client import GraphqlClient, GraphqlError
 
 
 def setup_function(_):

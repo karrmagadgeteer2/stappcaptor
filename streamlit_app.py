@@ -7,19 +7,16 @@ https://github.com/karrmagadgeteer2/stappcaptor/blob/master/LICENSE.md
 SPDX-License-Identifier: BSD-3-Clause
 """
 
-import os
-
 import pandas as pd
 import streamlit as st
 
 from graphql_client import GraphqlClient
 
-ENV = os.environ.get("DEPLOYMENT_ENV", "local").lower()
+ENV = "cloud"
+STREAMLIT_APP_NAME = "stappcaptor"
+
 if ENV == "cloud":
-    REDIRECT_URI = (
-        os.environ.get("CLOUD_REDIRECT_URI")
-        or f"https://{os.environ.get('STREAMLIT_APP_NAME')}.streamlit.app"
-    )
+    REDIRECT_URI = f"https://{os.environ.get('STREAMLIT_APP_NAME')}.streamlit.app"
 else:
     REDIRECT_URI = "http://localhost:8501"
 

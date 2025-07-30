@@ -84,6 +84,7 @@ pylint = { max-args = 4, max-branches = 5, max-statements = 24 }
 
 [tool.pytest.ini_options]
 testpaths = "tests"
+addopts = "--cov=graphql_client --cov-fail-under=85"
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:holidays.*"

@@ -79,7 +79,7 @@ def test_get_auth_url_and_login(monkeypatch):
     client = gc.GraphqlClient(database="test", base_url="example.com")
 
     auth_url = client.get_auth_url("http://localhost")
-    assert "https://testportal.example.com/token" in auth_url
+    assert auth_url.startswith("https://auth.captor.se/login?")
 
     token = client.login()
     assert token == "token123"

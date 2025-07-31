@@ -189,19 +189,13 @@ def token_get_server(  # pragma: no cover
     logger_message = "token_get_server()"
     logger.info(logger_message)
 
-    if database == "prod":
-        url_str = ""
-    elif database == "test":
-        url_str = "test"
-    else:
+    if database not in {"prod", "test"}:
         raise DatabaseChoiceError
 
     if check_internet():
+        params = urlencode({"redirect_uri": f"http://localhost:{port}/token"})
         webbrowser.open(
-            url=(
-                f"https://{url_str}portal.{base_url}/token?"
-                f"redirect_uri=http://localhost:{port}/token"
-            ),
+            url=f"https://auth.captor.se/login?{params}",
             new=2,
         )
     else:
@@ -210,7 +204,7 @@ def token_get_server(  # pragma: no cover
     @Request.application
     def app(request: Request) -> Response:
         """Local HTTP handler to receive the API key from the browser."""
-        queue.put(item=request.args["api_key"])
+        queue.put(item=request.args.get("token") or request.args.get("api_key"))
         return Response(
             response=""" <!DOCTYPE html>
                          <html lang=\"en-US\">
@@ -248,7 +242,12 @@ class GraphqlError(Exception):
 class GraphqlClient:
     """Streamlit-adapted GraphQL client."""
 
-    def __init__(self, database: str = "prod", base_url: str = "captor.se") -> None:
+    def __init__(
+        self,
+        database: str = "prod",
+        base_url: str = "captor.se",
+        auth_base_url: str = "auth.captor.se",
+    ) -> None:
         """Initialize the GraphqlClient.
 
         Attempts to load an existing token from Streamlit session state
@@ -261,6 +260,7 @@ class GraphqlClient:
         """
         self.database = database
         self.base_url = base_url
+        self.auth_base_url = auth_base_url
         prefix = "" if database == "prod" else "test"
         self.url = f"https://{prefix}api.{base_url}/graphql"
         self.tokenfile = ".captor_streamlit"
@@ -286,9 +286,8 @@ class GraphqlClient:
         Returns:
             The complete authentication URL.
         """
-        prefix = "" if self.database == "prod" else "test"
         params = urlencode({"redirect_uri": redirect_uri})
-        return f"https://{prefix}portal.{self.base_url}/token?{params}"
+        return f"https://{self.auth_base_url}/login?{params}"
 
     def login(self) -> str:
         """Start the local HTTP callback flow.
@@ -298,7 +297,7 @@ class GraphqlClient:
         """
         token = token_get_server(
             database=self.database,
-            base_url=self.base_url,
+            base_url=self.auth_base_url,
             filename=self.tokenfile,
         )
         st.session_state["token"] = token

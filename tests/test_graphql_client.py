@@ -125,6 +125,48 @@ def test_token_get_server(monkeypatch):
     assert token == "abc"
 
 
+def test_login_with_credentials(monkeypatch):
+    import graphql_client as gc
+
+    monkeypatch.setattr(gc, "token_get_with_credentials", lambda **_: "tok")
+    monkeypatch.setattr(gc.pyjwt, "decode", lambda jwt, options: {"u": "p"})
+    st.session_state.clear()
+    client = gc.GraphqlClient()
+
+    token = client.login_with_credentials("u", "p")
+    assert token == "tok"
+    assert client.token == "tok"
+    assert st.session_state["decoded_token"] == {"u": "p"}
+
+
+def test_token_get_with_credentials(monkeypatch):
+    import graphql_client as gc
+
+    class DummyResp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"access_token": "abc"}
+
+    captured = {}
+
+    def dummy_post(url, data, headers, timeout):
+        captured["url"] = url
+        captured["data"] = data
+        return DummyResp()
+
+    monkeypatch.setattr(gc, "requests_post", dummy_post)
+    monkeypatch.setattr(gc, "write_token_to_file", lambda jwt_token, filename: None)
+    monkeypatch.setattr(gc, "check_internet", lambda: True)
+
+    token = gc.token_get_with_credentials("u", "p", "prod", "auth.captor.se", "f")
+
+    assert token == "abc"
+    assert captured["url"].endswith("/token")
+    assert captured["data"]["username"] == "u"
+
+
 def test_check_internet(monkeypatch):
     import graphql_client as gc
 

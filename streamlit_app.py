@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 import pandas as pd
 import streamlit as st
 
-from graphql_client import GraphqlClient
+from graphql_client import GraphqlClient, requests_post
 
 ENV = "cloud"
 STREAMLIT_APP_NAME = "stappcaptor"
@@ -36,27 +36,42 @@ if ENV == "cloud" and "token" not in st.session_state:
         st.success("✅ Token captured from URL — you’re authenticated!")
 
 if "token" not in st.session_state:
-    st.warning("🔐 Authentication required to access Captor’s GraphQL API.")
+    st.warning("🔐 Enter your Captor credentials to obtain an API token.")
 
-    if ENV == "local":
-        if st.button("🔑 Log in via browser (Local)"):
-            with st.spinner("Opening browser and waiting for callback…"):
-                try:
-                    token = gql.login()
-                    st.session_state["token"] = token
-                    st.success("✅ Authenticated successfully!")
-                except Exception as e:  # noqa: BLE001
-                    st.error(f"Login failed: {e}")
-        st.stop()
+    with st.form("login_form", clear_on_submit=True):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Log in")
 
-    else:
-        auth_url = gql.get_auth_url(redirect_uri=REDIRECT_URI)
-        st.markdown(
-            f'<a href="{auth_url}" target="_blank" rel="noopener">'
-            "🔑 Log in with Captor Auth (Cloud)"
-            "</a>",
-            unsafe_allow_html=True,
-        )
+    if submitted:
+        with st.spinner("🔄 Requesting token…"):
+            try:
+                data = {
+                    "username": username,
+                    "password": password,
+                    "client_id": gql.database,
+                }
+                headers = {
+                    "accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                }
+                resp = requests_post(
+                    url=f"https://{gql.auth_base_url}/token",
+                    data=data,
+                    headers=headers,
+                    timeout=10,
+                )
+                resp.raise_for_status()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Login failed: {exc}")
+                st.stop()
+
+        result = resp.json()
+        st.session_state["token"] = result.get("access_token")
+        st.session_state["token_response"] = result
+        gql.token = result.get("access_token")
+        st.success("✅ Token retrieved!")
+        st.json(result)
         st.stop()
 
 if st.session_state.pop("just_authenticated", False):

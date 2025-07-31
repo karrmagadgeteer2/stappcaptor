@@ -7,77 +7,85 @@ https://github.com/karrmagadgeteer2/stappcaptor/blob/master/LICENSE.md
 SPDX-License-Identifier: BSD-3-Clause
 """
 
+import time
+
 import pandas as pd
+import requests
 import streamlit as st
 
-from graphql_client import GraphqlClient, requests_post
 
-ENV = "cloud"
-STREAMLIT_APP_NAME = "stappcaptor"
+class GraphqlError(Exception):
+    """Raised if the Graphql query returns any error(s)."""
 
-if ENV == "cloud":
-    REDIRECT_URI = f"https://{STREAMLIT_APP_NAME}.streamlit.app"
-else:
-    REDIRECT_URI = "http://localhost:8501"
-
-st.set_page_config(page_title="Captor GraphQL Explorer", layout="wide")
-st.title("🔍 Captor GraphQL Explorer")
-
-if "gql" not in st.session_state:
-    st.session_state.gql = GraphqlClient()
-gql: GraphqlClient = st.session_state.gql
-
-if ENV == "cloud" and "token" not in st.session_state:
-    params = st.experimental_get_query_params()
-    tok = (params.get("api_key") or params.get("token") or [None])[0]
-    if tok:
-        st.session_state["token"] = tok
-        st.experimental_set_query_params()
-        st.success("✅ Token captured from URL — you’re authenticated!")
 
 if "token" not in st.session_state:
-    st.warning("🔐 Enter your Captor credentials to obtain an API token.")
+    st.session_state.token = None
+    st.session_state.user_display_name = None
+    st.session_state.user_id = None
+    st.session_state.exp = None
 
-    with st.form("login_form", clear_on_submit=True):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Log in")
+st.title("Captor.se API Authentication")
 
-    if submitted:
-        with st.spinner("🔄 Requesting token…"):
-            try:
-                data = {
-                    "username": username,
-                    "password": password,
-                    "client_id": gql.database,
-                }
-                headers = {
-                    "accept": "application/json",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                }
-                resp = requests_post(
-                    url=f"https://{gql.auth_base_url}/token",
-                    data=data,
-                    headers=headers,
-                    timeout=10,
-                )
-                resp.raise_for_status()
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Login failed: {exc}")
-                st.stop()
+timeout = 10
 
-        result = resp.json()
-        st.session_state["token"] = result.get("access_token")
-        st.session_state["token_response"] = result
-        gql.token = result.get("access_token")
-        st.success("✅ Token retrieved!")
-        st.json(result)
-        st.stop()
+valid_token = (
+    st.session_state.token is not None
+    and st.session_state.exp is not None
+    and time.time() < st.session_state.exp
+)
 
-if st.session_state.pop("just_authenticated", False):
-    st.success("👍 You’re authenticated!")
+login_container = st.container()
+if not valid_token:
+    with login_container:
+        st.write("**Please login to continue**")
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login")
 
-st.success("You’re now logged in and can run GraphQL queries below.")
+            if submitted:
+                if not username or not password:
+                    st.error("Please enter both username and password.")
+                else:
+                    url = "https://auth.captor.se/token"
+                    payload = {
+                        "username": username,
+                        "password": password,
+                        "client_id": "prod",
+                    }
+                    headers = {
+                        "accept": "application/json",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    }
+                    try:
+                        response = requests.post(
+                            url=url, data=payload, headers=headers, timeout=timeout
+                        )
+                        response.raise_for_status()
+                    except requests.RequestException as exc:
+                        st.error(
+                            f"Authentication failed: {response.status_code} "
+                            f"{response.text}\n{exc!s}"
+                        )
+                    else:
+                        data = response.json()
+                        st.session_state.token = data.get("access_token")
+                        st.session_state.exp = data.get("exp")
+                        st.session_state.user_display_name = data.get(
+                            "user_display_name"
+                        )
+                        st.session_state.user_id = data.get("user_id")
+                        st.success(
+                            f"Authenticated as {st.session_state.user_display_name}"
+                        )
+                        login_container.empty()
+
+if valid_token:
+    st.info(f"Authenticated as {st.session_state.user_display_name}")
+    st.write(
+        "Access token stored in session. "
+        "You can now call the Captor API using this token."
+    )
 
 st.subheader("Query Parties")
 party_name = st.text_input("Party name", "Captor Iris Bond")
@@ -92,7 +100,33 @@ if st.button("Fetch Parties"):
           }
         }
         """
-        data, error = gql.query(query_string=query, variables={"nameIn": [party_name]})
+        prefix = ""
+        base_url = "captor.se"
+        url = f"https://{prefix}api.{base_url}/graphql"
+        variables = {"nameIn": [party_name]}
+        verify = True
+        headers = {
+            "Authorization": f"Bearer {st.session_state.token}",
+            "accept-encoding": "gzip",
+        }
+        payload: dict[str, object] = {"query": query}
+        if variables:
+            payload["variables"] = variables
+
+        try:
+            resp = requests.post(
+                url=url,
+                json=payload,
+                headers=headers,
+                verify=verify,
+                timeout=timeout,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            raise GraphqlError(str(exc)) from exc
+
+        result = resp.json()
+        data, error = result.get("data"), result.get("errors")
 
     if error:
         st.error(f"❗ GraphQL Error: {error}")

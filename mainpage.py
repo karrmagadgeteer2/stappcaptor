@@ -26,7 +26,6 @@ if "token" not in st.session_state:
     st.session_state.exp = None
 
 st.markdown("# Main page 🎈")
-st.sidebar.markdown("# Main page 🎈")
 
 timeout = 10
 
@@ -114,49 +113,52 @@ choice = st.selectbox(
 )
 
 if st.button("Load"):
-    with st.spinner("⏳ Fetching data…"):
-        query = """
-        query parties($nameIn: [String!]) {
-          parties(filter: {nameIn: $nameIn}) {
-            longName
-            legalEntityIdentifier
-          }
-        }
-        """
-        prefix = ""
-        base_url = "captor.se"
-        url = f"https://{prefix}api.{base_url}/graphql"
-        variables = {"nameIn": [choice]}
-        verify = True
-        headers = {
-            "Authorization": f"Bearer {st.session_state.token}",
-            "accept-encoding": "gzip",
-        }
-        payload: dict[str, object] = {"query": query}
-        if variables:
-            payload["variables"] = variables
-
-        try:
-            resp = requests.post(
-                url=url,
-                json=payload,
-                headers=headers,
-                verify=verify,
-                timeout=timeout,
-            )
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            raise GraphqlError(str(exc)) from exc
-
-        result = resp.json()
-        data, error = result.get("data"), result.get("errors")
-
-    if error:
-        st.error(f"❗ GraphQL Error: {error}")
-    elif not data or not data.get("parties"):
-        st.warning("⚠️ No parties found for that name.")
+    if not valid_token:
+        st.error("Please authenticate before running data load.")
     else:
-        df = pd.DataFrame(data["parties"])
-        df["ISIN code"] = options[choice]
-        st.dataframe(df, use_container_width=True)
-        st.balloons()
+        with st.spinner("⏳ Fetching data…"):
+            query = """
+            query parties($nameIn: [String!]) {
+              parties(filter: {nameIn: $nameIn}) {
+                longName
+                legalEntityIdentifier
+              }
+            }
+            """
+            prefix = ""
+            base_url = "captor.se"
+            url = f"https://{prefix}api.{base_url}/graphql"
+            variables = {"nameIn": [choice]}
+            verify = True
+            headers = {
+                "Authorization": f"Bearer {st.session_state.token}",
+                "accept-encoding": "gzip",
+            }
+            payload: dict[str, object] = {"query": query}
+            if variables:
+                payload["variables"] = variables
+
+            try:
+                resp = requests.post(
+                    url=url,
+                    json=payload,
+                    headers=headers,
+                    verify=verify,
+                    timeout=timeout,
+                )
+                resp.raise_for_status()
+            except requests.RequestException as exc:
+                raise GraphqlError(str(exc)) from exc
+
+            result = resp.json()
+            data, error = result.get("data"), result.get("errors")
+
+        if error:
+            st.error(f"❗ GraphQL Error: {error}")
+        elif not data or not data.get("parties"):
+            st.warning("⚠️ No parties found for that name.")
+        else:
+            df = pd.DataFrame(data["parties"])
+            df["ISIN code"] = options[choice]
+            st.dataframe(df, use_container_width=True)
+            st.balloons()

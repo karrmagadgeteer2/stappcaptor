@@ -10,4 +10,3 @@ SPDX-License-Identifier: BSD-3-Clause
 import streamlit as st
 
 st.markdown("# Page 2 ❄️")
-st.sidebar.markdown("# Page 2 ❄️")

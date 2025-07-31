@@ -53,7 +53,7 @@ if "token" not in st.session_state:
         auth_url = gql.get_auth_url(redirect_uri=REDIRECT_URI)
         st.markdown(
             f'<a href="{auth_url}" target="_blank" rel="noopener">'
-            "🔑 Log in with Captor Portal (Cloud)"
+            "🔑 Log in with Captor Auth (Cloud)"
             "</a>",
             unsafe_allow_html=True,
         )

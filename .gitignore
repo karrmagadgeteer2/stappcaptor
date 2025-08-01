@@ -13,6 +13,9 @@ coverage.xml
 # Poetry
 /.poetry/
 
+# Streamlit
+/.streamlit/
+
 # Pycharm
 .idea/*
 

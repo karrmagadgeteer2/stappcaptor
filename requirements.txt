@@ -7,8 +7,8 @@ certifi==2025.7.14 ; python_version >= "3.11" and python_version < "3.14"
 cffi==1.17.1 ; python_version >= "3.11" and python_version < "3.14" and platform_python_implementation != "PyPy"
 cfgv==3.4.0 ; python_version >= "3.11" and python_version < "3.14"
 charset-normalizer==3.4.2 ; python_version >= "3.11" and python_version < "3.14"
-click==8.2.1 ; python_version >= "3.11" and python_version < "3.14"
-colorama==0.4.6 ; python_version >= "3.11" and python_version < "3.14" and (platform_system == "Windows" or sys_platform == "win32")
+click==8.2.2 ; python_version >= "3.11" and python_version < "3.14"
+colorama==0.4.6 ; python_version >= "3.11" and python_version < "3.14" and (sys_platform == "win32" or platform_system == "Windows")
 coverage==7.10.1 ; python_version >= "3.11" and python_version < "3.14"
 cryptography==44.0.1 ; python_version >= "3.11" and python_version < "3.14"
 distlib==0.4.0 ; python_version >= "3.11" and python_version < "3.14"
